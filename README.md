@@ -8,3 +8,14 @@ is used.
 
 [Here KDD diagram]
 
+## Prerequisites
+
+Tycoon is intended to be built and run cloud agnostic, so the only prerequisite is to have a Kubernetes >= 1.22 compatible cluster with the following apps installed:
+
+- [MetalLB](https://metallb.universe.tf/) or any other kubernetes load balancer
+- [Traefik v2](https://traefik.io/traefik/) edge router
+- [cert-manager](https://cert-manager.io/) for certificate managemet
+- A storage class that allows the dynamic creation of persistent volumes
+- A private docker-registry deployed in the cluster
+
+
