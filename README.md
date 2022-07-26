@@ -8,6 +8,8 @@ is used.
 
 [Here KDD diagram]
 
+This project provides a cloud agnostic infrastructure for the collection, pre-processing and transformation of data, as well as the phase of knowledge extraction, construction and publication of the model in the form of a microservice and final client to exploit the model.
+
 ## Prerequisites
 
 Tycoon is intended to be built and run cloud agnostic, so the only prerequisite is to have a Kubernetes >= 1.22 compatible cluster with the following apps installed:
@@ -18,4 +20,29 @@ Tycoon is intended to be built and run cloud agnostic, so the only prerequisite 
 - A storage class that allows the dynamic creation of persistent volumes
 - A private docker-registry deployed in the cluster
 
+It is highly recommended to also have a guest machine (either physical, virtual or containerized) with the following programs installed:
 
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [MinIO client](https://docs.min.io/docs/minio-client-complete-guide.html)
+
+## Project structure
+
+## Building Tycoon
+
+### Infrastructure deployment
+
+### Data ingestion
+
+### Data preprocessing and transformation
+
+### Model construction and calibration
+
+### Model deployment
+
+### Client deployment
+
+## Test
+
+## Documentation
+
+## Troubleshooting
