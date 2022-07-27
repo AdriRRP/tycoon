@@ -46,3 +46,28 @@ It is highly recommended to also have a guest machine (either physical, virtual 
 ## Documentation
 
 ## Troubleshooting
+
+Building images for ARM64 (aarch64)
+
+
+
+init:
+	docker run --rm --privileged docker/binfmt:a7996909642ee92942dcd6cff44b9b95f08dad64
+	docker buildx create \
+		--name multiarch-builder \
+		--driver-opt network=host
+	docker buildx use multiarch-builder
+	docker buildx inspect --bootstrap
+build:
+	docker buildx build --platform linux/arm,linux/arm64,linux/amd64 -t docker.adrianramosrp.com/jcrypt-price-collector:latest .
+push:
+	docker buildx build \
+		--platform linux/arm,linux/arm64,linux/amd64 \
+		--progress=plain \
+		--network=host \
+		-t docker.adrianramosrp.com/jcrypt-price-collector:latest . --push
+	#docker push docker.adrianramosrp.com/jcrypt-price-collector:latest
+clean:
+	docker buildx use default
+	docker buildx rm multiarch-builder
+all: clean init build push clean
