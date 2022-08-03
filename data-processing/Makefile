@@ -1,5 +1,6 @@
 init:
-	docker run --rm --privileged docker/binfmt:a7996909642ee92942dcd6cff44b9b95f08dad64
+	#docker run --rm --privileged docker/binfmt:a7996909642ee92942dcd6cff44b9b95f08dad64
+	docker run --rm --privileged docker/binfmt:latest
 	docker buildx create \
 		--name multiarch-builder \
 		--driver-opt network=host
