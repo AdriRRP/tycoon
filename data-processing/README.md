@@ -1,5 +1,5 @@
 # Tycoon - Data processing
-
+Data preprocessing will be done using Apache Spark. The goal of preprocessing
 Includes all massive data processing using Spark batch
 ## Spark on Kubernetes
 
@@ -110,4 +110,10 @@ val df = spark.read.csv("s3a://spark/addresses.csv")
     --conf spark.hadoop.mapreduce.fileoutputcommitter.cleanup-failures.ignored=true \
     s3a://spark/spark-examples_2.12-3.3.0.jar
 
+./bin/docker-image-tool.sh -r docker.adrianramosrp.com -t latest -f kubernetes/dockerfiles/spark/Dockerfile build
+./bin/docker-image-tool.sh -r docker.adrianramosrp.com -t latest -f kubernetes/dockerfiles/spark/Dockerfile push
+
+#ADD https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.2/hadoop-aws-3.3.2.jar /opt/spark/jars
+#ADD https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.1026/aws-java-sdk-bundle-1.11.1026.jar /opt/spark/jars
+#ADD https://repo1.maven.org/maven2/org/wildfly/openssl/wildfly-openssl/1.0.7.Final/wildfly-openssl-1.0.7.Final.jar /opt/spark/jars
 
