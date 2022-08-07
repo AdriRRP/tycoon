@@ -9,6 +9,7 @@ import scala.jdk.CollectionConverters._
 trait EnvHacker {
   /**
    * Portable method for setting env vars on both *nix and Windows.
+   *
    * @see http://stackoverflow.com/a/7201825/293064
    */
   def setEnv(newEnv: Map[String, String]): Unit = {

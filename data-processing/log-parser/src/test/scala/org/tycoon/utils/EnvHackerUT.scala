@@ -18,14 +18,14 @@ class EnvHackerUT
   "EnvHacker" should "set arbitrary environment variables" in {
     setEnv(testEnvironment)
 
-    testEnvironment.foreach{
+    testEnvironment.foreach {
       case (envVar, value) =>
         sys.env.get(envVar) shouldBe Some(value)
     }
   }
 
   it should "override original environment variables" in {
-    originalEnvironment.foreach{
+    originalEnvironment.foreach {
       case (envVar, value) =>
         sys.env.get(envVar) shouldBe None
     }

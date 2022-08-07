@@ -5,7 +5,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.tycoon.LogParserTestData
-import org.tycoon.constants.LogParserConstants.{SparkConfigS3aAccessKey, SparkConfigS3aEndpoint, SparkConfigS3aPathStyleAccess, SparkConfigS3aPrefix, SparkConfigS3aSecretKey}
+import org.tycoon.constants.LogParserConstants._
 
 class ZipUtilsIT
   extends AnyFlatSpec
@@ -36,7 +36,6 @@ class ZipUtilsIT
 
   "ZipUtils" should "successfully runs with properly configured" in {
     import ZipUtils.SparkSessionZipExtensions
-
 
 
     val searchPath = s"s3a://${LogParserTestData.LogParserTestBucket}/*.*"

@@ -1,7 +1,6 @@
 package org.tycoon
 
-import com.amazonaws.services.s3.model.Bucket
-import org.tycoon.LogParserTestData.{LogParserTestBucket, S3AAccessKey, S3AEndpoint, S3ASecretKey, listDataResources}
+import org.tycoon.LogParserTestData._
 import org.tycoon.utils.S3Utils
 
 import java.io.File
