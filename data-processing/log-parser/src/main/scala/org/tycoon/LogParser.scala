@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 import org.apache.spark.sql.SparkSession
 import org.tycoon.config.{LogParserConfig, S3aConfig}
 import org.tycoon.constants.LogParserConstants._
-import org.tycoon.utils.ZipUtils
+import org.tycoon.utils.ZipUtils.SparkSessionZipExtensions
 import pureconfig._
 import pureconfig.generic.auto._
 
@@ -81,9 +81,7 @@ object LogParser {
     // Add file extension filter
     val fileFilter = logParserConfig.fileFilter.split(",").toList
 
-    val inputRDD = spark.sparkContext
-      .binaryFiles(searchPath)
-      .flatMap(target => ZipUtils.unzip(target, fileFilter))
+    val inputRDD = spark.readZippedTextFiles(searchPath, fileFilter)
 
     inputRDD.foreach(println)
   }

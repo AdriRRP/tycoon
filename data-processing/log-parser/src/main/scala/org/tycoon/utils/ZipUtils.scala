@@ -1,6 +1,8 @@
 package org.tycoon.utils
 
 import org.apache.spark.input.PortableDataStream
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream}
 import java.util.zip.ZipInputStream
@@ -114,5 +116,15 @@ object ZipUtils {
           case _ => List.empty
         }
       }).toList
+  }
+
+  implicit class SparkSessionZipExtensions(spark: SparkSession) {
+    def readZippedTextFiles(
+                             searchPath: String,
+                             fileFilter: List[String] = List.empty
+                           ): RDD[String] =
+      spark.sparkContext
+        .binaryFiles(searchPath)
+        .flatMap(target => ZipUtils.unzip(target, fileFilter))
   }
 }
