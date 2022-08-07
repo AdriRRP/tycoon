@@ -1,8 +1,11 @@
-package org.tycoon
+package org.tycoon.utils
 
 import java.util.{Collections, Map => JavaMap}
 import scala.jdk.CollectionConverters._
 
+/**
+ * Allow multi-platform environment variables manipulation
+ */
 trait EnvHacker {
   /**
    * Portable method for setting env vars on both *nix and Windows.

@@ -1,14 +1,21 @@
 package org.tycoon
 
 import com.amazonaws.services.s3.model.Bucket
-import org.tycoon.LogParserTestData.{LogParserTestBucket, S3AAccessKey, S3ASecretKey}
+import org.tycoon.LogParserTestData.{LogParserTestBucket, S3AAccessKey, S3AEndpoint, S3ASecretKey, listDataResources}
+import org.tycoon.utils.S3Utils
+
+import java.io.File
 
 object LogParserTestData {
-  val LogParserTestBucket: String = "test"
+  val LogParserTestBucket: String = "testbucket"
+
   val S3AAccessKey: String = getEnvVar("S3A_ACCESS_KEY")
   val S3ASecretKey: String = getEnvVar("S3A_SECRET_KEY")
+  val S3AEndpoint: String = getEnvVar("S3A_ENDPOINT")
 
-  def getEnvVar(name: String): String =
+  val DataResourcesPath: String = "/data"
+
+  def getEnvVar(name: String): String = {
     sys.env.getOrElse(
       name,
       sys.props.getOrElse(
@@ -18,16 +25,37 @@ object LogParserTestData {
         )
       )
     )
+  }
+
+  def listDataResources(): Array[String] = {
+    new File(getClass.getResource(DataResourcesPath).toURI)
+      .list()
+      .map(resource => s"$DataResourcesPath/$resource")
+  }
 }
 
-trait LogParserTestData extends S3TestUtils with EnvHacker {
+trait LogParserTestData {
+
+  val s3Utils = new S3Utils(
+    S3AAccessKey,
+    S3ASecretKey,
+    S3AEndpoint
+  )
 
   def setupTestData(): Unit = {
-    setEnv(Map(
-      "AWS_ACCESS_KEY" -> S3AAccessKey,
-      "AWS_SECRET_KEY" -> S3ASecretKey,
-    ))
-    createBucket(LogParserTestBucket)
+    s3Utils.createBucket(LogParserTestBucket)
+
+    listDataResources().foreach(resource =>
+      s3Utils.putObjectFromResources(
+        LogParserTestBucket,
+        resource.split("/").last,
+        resource,
+      )
+    )
+  }
+
+  def teardownTestData(): Unit = {
+    s3Utils.deleteBucket(LogParserTestBucket)
   }
 
 }

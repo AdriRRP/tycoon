@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 import org.apache.spark.sql.SparkSession
 import org.tycoon.config.{LogParserConfig, S3aConfig}
 import org.tycoon.constants.LogParserConstants._
-import org.tycoon.zip.ZipUtils
+import org.tycoon.utils.ZipUtils
 import pureconfig._
 import pureconfig.generic.auto._
 
@@ -57,28 +57,35 @@ object LogParser {
    *
    * @param spark target spark session
    */
-  def refreshHadoopSession(spark: SparkSession): Unit =
+  def refreshHadoopConfig(spark: SparkSession): Unit =
     spark.conf.getAll.filter(_._1.startsWith(SparkConfigS3aPrefix)).foreach {
       case (key, value) => spark.sparkContext.hadoopConfiguration.set(key, value)
     }
 
   def main(args: Array[String]): Unit = {
 
+    val sparkBuilder = SparkSession.builder()
+      .appName(getClass.getName)
+      .config(SparkConfigS3aPathStyleAccess, true.toString)
 
-    val sparkBuilder = SparkSession.builder().appName(getClass.getName)
     val spark = addS3aConfig(sparkBuilder).getOrCreate()
-    refreshHadoopSession(spark)
 
-    spark.sparkContext
-      .binaryFiles(s"s3a://${logParserConfig.inputBucket}/${logParserConfig.inputFiles}")
-      .map(ZipUtils.unzip)
-      .repartition(100)
-      .foreach(println)
+    // Add s3 configurations to Hadoop config
+    refreshHadoopConfig(spark)
 
-    //val df = spark.read.csv(logParserConfig.path)
-    //df.show(1000, false)
-    //spark.sparkContext.binaryFiles("s3a://tycoon/**/*.zip").foreach(println)
-    //spark.sparkContext.binaryFiles(logParserConfig.path).map(binFile => binFile._1).foreach(println)
+    // Add bucket prefix to each input file
+    val searchPath = logParserConfig.inputFiles.split(",")
+      .map(file => s"s3a://${logParserConfig.inputBucket}/$file")
+      .mkString(",")
+
+    // Add file extension filter
+    val fileFilter = logParserConfig.fileFilter.split(",").toList
+
+    val inputRDD = spark.sparkContext
+      .binaryFiles(searchPath)
+      .flatMap(target => ZipUtils.unzip(target, fileFilter))
+
+    inputRDD.foreach(println)
   }
 
 }

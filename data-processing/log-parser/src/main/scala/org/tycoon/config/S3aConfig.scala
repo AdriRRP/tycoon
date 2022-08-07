@@ -5,10 +5,10 @@ package org.tycoon.config
  *
  * @param accessKey s3a access key
  * @param secretKey s3a secret key
- * @param endpoint s3a endpoint
+ * @param endpoint  s3a endpoint
  */
 final case class S3aConfig(
-                          accessKey: String,
-                          secretKey: String,
-                          endpoint: String
+                            accessKey: String,
+                            secretKey: String,
+                            endpoint: String
                           )
