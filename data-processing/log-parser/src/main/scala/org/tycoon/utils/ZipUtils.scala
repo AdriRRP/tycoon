@@ -1,5 +1,6 @@
 package org.tycoon.utils
 
+import com.typesafe.scalalogging.Logger
 import org.apache.spark.input.PortableDataStream
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -8,6 +9,9 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream}
 import java.util.zip.ZipInputStream
 
 object ZipUtils {
+
+  // Class logger
+  val logger: Logger = Logger(getClass.getName)
 
   /**
    * Given a tuple with filename and portable data stream (as used in spark binary file streams)
@@ -90,7 +94,10 @@ object ZipUtils {
 
     LazyList.continually(zis.getNextEntry)
       .takeWhile {
-        case null => zis.close(); false
+        case null =>
+          zis.close()
+          inputStream.close()
+          false
         case _ => true
       }
       .flatMap(entry => {
@@ -101,19 +108,21 @@ object ZipUtils {
           outStream.write(buffer, 0, length)
           length = zis.read(buffer)
         }
+        outStream.close()
+
+        println(entry.getName)
+        System.gc()
 
         (entry.getName, entry.isDirectory) match {
           // Zip files
           case (name, false) if name.endsWith(".zip") =>
-            val inStream: ByteArrayInputStream = new ByteArrayInputStream(outStream.toByteArray);
+            val inStream: ByteArrayInputStream = new ByteArrayInputStream(outStream.toByteArray)
             readZipInputStream(inStream)
           // When no fileFilter defined or file match at least one fileFilter entry
           case (name, false) if fileFilter.isEmpty || fileFilter.exists(name.endsWith) =>
             List(outStream)
-          // Directories
-          case (_, true) => List.empty
-          // Unsupported cases
-          case _ => List.empty
+          // Directories or unsupported cases
+          case (_, true) | _ => List.empty
         }
       }).toList
   }
