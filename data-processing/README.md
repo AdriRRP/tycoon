@@ -117,3 +117,11 @@ val df = spark.read.csv("s3a://spark/addresses.csv")
 #ADD https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.1026/aws-java-sdk-bundle-1.11.1026.jar /opt/spark/jars
 #ADD https://repo1.maven.org/maven2/org/wildfly/openssl/wildfly-openssl/1.0.7.Final/wildfly-openssl-1.0.7.Final.jar /opt/spark/jars
 
+https://blog.min.io/small-file-archives/
+
+Explicar la aventura del zip
+- Mejor opción: cabecera http en cliente minio
+  - Spark no lo soporta
+  - No permite zip anidados
+- Opción codec zip para hadoop
+  - Peta la JVM por hava heap
