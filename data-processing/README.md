@@ -11,7 +11,44 @@ See [official website](https://spark.apache.org/docs/latest/running-on-kubernete
 - create build context for arm64
 - build the image with selected context
 
-## Reading zipped files
+## Dealing zipped files
+Because the target data to be processed in tycoon are logs, it is common for zip compression to be used when ingesting large volumes of small text files.
+To remedy this shortcoming, an attempt was made to use Minio's native ability to [read the contents of zip files directly from the object store](https://blog.min.io/small-file-archives/), but the following issues arose:
+- Apache spark's implementation of the S3 file system does not allow adding custom http headers.
+- Even if the source class is extended to pass the `x-minio-extract` header to `true`, Minio's native capability does not allow reading `.zip` files recursively (most target data for tycoon has this Format).
+
+As an alternative solution, the possibility of adding support for `.zip` files to apache spark was studied.
+In the first instance, we tried to read the `.zip` files directly as Spark binary files, and decompress their contents in memory.
+The [original object](log-parser/src/main/scala/org/tycoon/utils/ZipUtils.scala) has been kept in case in the future the reading could be optimized enough not to cause a `java heap space` exception.
+
+Another option considered was to extend hadoop's [CompressionCodec](https://hadoop.apache.org/docs/r2.8.0/api/org/apache/hadoop/io/compress/CompressionCodec.html) interface to support reading `.zip` files.
+Hadoop doesn't natively support this kind of compression because ZIP is a container format, whereas, for example, GZip is just a stream-like format (used to store a file).
+
+Since none of the previous options is viable, since it requires a lot of memory to keep the original file and the recursively decompressed ones, we have decided to do a local decompression with subsequent upload to Minio through a bash script.
+
+### Decompressing and uploading ZIP files
+The bash script `extract-and-push.sh` allows you to uncompress a directory containing recursively compressed ZIP files in a temporary directory, and then upload all the text files (.txt format) contained in it to the S3 file system offered by Minio.
+```
+./extract-and-push.sh -h
+```
+
+```
+Usage: extract-and-push.sh [-h] [-v] -b mybucket -a mc_alias [-t /tmp/extractions] -i /tmp/input_folder
+
+Given a directory path, recursively searches through the .zip files for txt files and uploads them to the selected s3 bucket.
+
+Available options:
+
+-h, --help        Print this help and exit
+-v, --verbose     Print script debug info
+-b, --bucket      [Mandatory] Target S3 bucket
+-a, --mc-alias    [Mandatory] Target mc (minio client) alias with S3 credentials configured
+-t, --temp-path   Temporary path where .zip files are extracted (default: /tmp/extract-and-push_1660663933799710587)
+-i, --input-path  [Mandatory] Input directory path where target files are located
+-m, --minio-bin   Minio client binary path (default: /usr/bin/mc)
+-p, --bucket-path Path into the bucket where files are placed (default: root bucket path)
+```
+
 
 
 
