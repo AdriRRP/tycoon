@@ -49,6 +49,11 @@ Available options:
 -p, --bucket-path Path into the bucket where files are placed (default: root bucket path)
 ```
 
+Example usage command:
+```
+./extract-and-push.sh -b tycoon -a k8s-minio -t /media/adrirrp/Data/manos_poker/tmp -i /media/adrirrp/Data/manos_poker/test -m /opt/minio/mc -p landing
+```
+
 
 
 

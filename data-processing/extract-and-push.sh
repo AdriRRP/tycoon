@@ -132,8 +132,6 @@ minio_put() {
     $minio_bin cp $1 $s3_path/${1##*/}
 }
 
-#minio_put /media/adrirrp/Data/manos_poker/PokerStars/tmp/PS_41230_2016_9_9_XDRX-007.txt
-
 # Initialize temp path
 rm -rf $temp_path
 mkdir -p $temp_path
@@ -145,6 +143,7 @@ find $input_path -name "*.zip" -exec cp "{}" $temp_path/ \;
 # Copy to S3 all text files in input directory
 for file in $(find $input_path -name '*.txt')
 do
+    msg "Putting $file to $s3_path/${file##*/}"
     minio_put $file
 done
 
