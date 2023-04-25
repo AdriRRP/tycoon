@@ -1,29 +1,29 @@
 package org.tycoon
 
 import com.typesafe.scalalogging.Logger
-import org.apache.spark.sql.SparkSession
-import org.tycoon.config.{LogParserConfig, S3aConfig}
-import org.tycoon.constants.LogParserConstants._
-import org.tycoon.utils.ZipUtils.SparkSessionZipExtensions
-import pureconfig._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{Dataset, SparkSession}
+import org.tycoon.catalog.Hand
+import org.tycoon.config.LogParserConfig
+import org.tycoon.constants.LogParserConstants.ConfigLogParserNamespace
+import org.tycoon.parser.extractor.HandsExtractor
+import org.tycoon.preprocessor.TextPreProcessor
+import pureconfig.ConfigSource
 import pureconfig.generic.auto._
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+import scala.util.{Failure, Success, Try}
 
 object LogParser {
 
   // Class logger
   val logger: Logger = Logger(getClass.getName)
 
-  // S3a related config
-  val s3aConfig: Option[S3aConfig] =
-    ConfigSource.default.at(ConfigS3aNamespace).load[S3aConfig] match {
-      case Left(failures) =>
-        failures.toList.foreach(failure => logger.warn(failure.toString))
-        None
-      case Right(config) => Some(config)
-    }
-
   // Application config
-  val logParserConfig: LogParserConfig =
+  private val logParserConfig: LogParserConfig =
     ConfigSource.default.at(ConfigLogParserNamespace).load[LogParserConfig] match {
       case Left(failures) =>
         failures.toList.foreach(failure => logger.warn(failure.toString))
@@ -33,57 +33,33 @@ object LogParser {
       case Right(config) => config
     }
 
-  /**
-   * Add parsed s3a configuration if success parsed to spark builder.
-   * If s3a configuration not found, return the same spark session
-   *
-   * @param builder target spark builder
-   * @return spark builder with s3a configurations if exists
-   */
-  def addS3aConfig(builder: SparkSession.Builder): SparkSession.Builder = {
-    s3aConfig match {
-      case None => builder
-      case Some(config) =>
-        builder
-          .config(SparkConfigS3aAccessKey, config.accessKey)
-          .config(SparkConfigS3aSecretKey, config.secretKey)
-          .config(SparkConfigS3aEndpoint, config.endpoint)
-    }
-
-  }
-
-  /**
-   * Given a SparkSession, set all fs.s3a properties in underlying hadoop configuration
-   *
-   * @param spark target spark session
-   */
-  def refreshHadoopConfig(spark: SparkSession): Unit =
-    spark.conf.getAll.filter(_._1.startsWith(SparkConfigS3aPrefix)).foreach {
-      case (key, value) => spark.sparkContext.hadoopConfiguration.set(key, value)
-    }
-
   def main(args: Array[String]): Unit = {
 
-    val sparkBuilder = SparkSession.builder()
-      .appName(getClass.getName)
-      .config(SparkConfigS3aPathStyleAccess, true.toString)
+    logger.debug(s"Get or create Spark Session")
+    val spark = SparkSession.builder().getOrCreate()
 
-    val spark = addS3aConfig(sparkBuilder).getOrCreate()
+    val rdd: RDD[Either[Hand,String]] = spark.sparkContext
+      .wholeTextFiles(logParserConfig.inputPath, 5)
+      .flatMap {
+        case (fileName, fileContent) =>
+          Try(HandsExtractor.extract(TextPreProcessor.fix(fileContent))) match {
+            case Success(hands) => hands.toList.flatMap(Hand.apply(_)).map(Left(_))
+            case Failure(err) =>
+              logger.error(s"Error parsing file $fileName: ${err.toString}")
+              List(Right(s"Error parsing file $fileName: ${err.toString}"))
+          }
+      }
 
-    // Add s3 configurations to Hadoop config
-    refreshHadoopConfig(spark)
+    import spark.implicits._
 
-    // Add bucket prefix to each input file
-    val searchPath = logParserConfig.inputFiles.split(",")
-      .map(file => s"s3a://${logParserConfig.inputBucket}/$file")
-      .mkString(",")
+    val handsDS: Dataset[Hand] = spark.createDataset(rdd.filter(_.isLeft).map(_.left.get))
+    val errorsDS: Dataset[String] = spark.createDataset(rdd.filter(_.isRight).map(_.right.get))
 
-    // Add file extension filter
-    val fileFilter = logParserConfig.fileFilter.split(",").toList
+    val timeId = LocalDateTime.now.format(DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss"))
 
-    val inputRDD = spark.readZippedTextFiles(searchPath, fileFilter)
+    handsDS.write.json(s"${logParserConfig.outputPath}/${LogParser.getClass.getSimpleName}$timeId.json")
+    errorsDS.write.json(s"${logParserConfig.outputPath}/${LogParser.getClass.getSimpleName}$timeId-errors.txt")
 
-    inputRDD.foreach(println)
   }
 
 }

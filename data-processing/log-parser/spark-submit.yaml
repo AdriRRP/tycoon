@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tycoon-log-parser-job
+spec:
+  ttlSecondsAfterFinished: 0
+  template:
+    metadata:
+      name: tycoon-log-parser
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccountName: spark
+      restartPolicy: Never
+      containers:
+        - name: tycoon-log-parser
+          image: docker.adrianramosrp.com/spark:latest
+          args: [
+            "/bin/bash",
+            "-c",
+            "/opt/spark/bin/spark-submit \
+            --master k8s://https://kubernetes.default.svc.cluster.local \
+            --deploy-mode cluster \
+            --name tycoon-log-parser \
+            --num-executors 5 \
+            --executor-cores 1 \
+            --executor-memory 2g \
+            --packages org.apache.hadoop:hadoop-aws:3.2.2 \
+            --class org.tycoon.LogParser \
+            --conf spark.jars.ivy=/tmp/.ivy2 \
+            --conf \"spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp\" \
+            --conf \"spark.executor.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp\" \
+            --conf spark.executor.instances=5 \
+            --conf spark.kubernetes.authenticate.driver.serviceAccountName=spark \
+            --conf spark.kubernetes.authenticate.executor.serviceAccountName=spark \
+            --conf spark.kubernetes.container.image=docker.adrianramosrp.com/spark:latest \
+            --conf spark.kubernetes.container.image.pullPolicy=Always \
+            --conf spark.kubernetes.container.image.pullSecrets=regcred \
+            --conf spark.kubernetes.file.upload.path=s3a://jars/ \
+            --conf spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider \
+            --conf \"spark.hadoop.fs.s3a.access.key=tycoon\" \
+            --conf \"spark.hadoop.fs.s3a.secret.key=tyc00n@cc0unt\" \
+            --conf \"spark.hadoop.fs.s3a.endpoint=https://minio.tycoon.svc.cluster.local\" \
+            --conf spark.hadoop.fs.s3a.fast.upload=true \
+            --conf spark.hadoop.fs.s3a.path.style.access=true \
+            --conf spark.hadoop.fs.s3a.connection.ssl.enabled=true \
+            --conf com.amazonaws.sdk.disableCertChecking=true \
+            --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.claimName=OnDemand \
+            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.storageClass=managed-nfs-storage \
+            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.sizeLimit=5Gi \
+            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.data.mount.path=/data \
+            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.data.mount.readOnly=false \
+            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.data.options.claimName=OnDemand \
+            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.data.options.storageClass=managed-nfs-storage \
+            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.data.options.sizeLimit=5Gi \
+            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.data.mount.path=/data \
+            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.data.mount.readOnly=false \
+            --conf spark.eventLog.enabled=false \
+            --conf spark.hadoop.mapreduce.input.fileinputformat.input.dir.recursive=true \
+            --conf spark.driver.extraJavaOptions=-Dcom.amazonaws.sdk.disableCertChecking=true \
+            --conf spark.executor.extraJavaOptions=-Dcom.amazonaws.sdk.disableCertChecking=true \
+            --verbose \
+            s3a://jars/log-parser.jar"
+          ]

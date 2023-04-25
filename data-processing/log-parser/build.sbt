@@ -1,27 +1,29 @@
-ThisBuild / name := "log-parser"
-ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "2.13.8"
-
 // Versions
-val sparkVersion = "3.3.0"
-val hadoopAwsVersion = "3.3.2"
-val awsJavaSdkVersion = "1.11.1026"
-val pureConfigVersion = "0.17.1"
-val logbackClassicVersion = "1.2.11"
+val selfVersion = "0.1.0-SNAPSHOT"
+val sparkVersion = "3.4.0"
+val pureConfigVersion = "0.17.2"
+val logbackClassicVersion = "1.4.6"
 val scalaLoggingVersion = "3.9.5"
-
-// Dependencies
-libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-sql" % sparkVersion % "provided"
-libraryDependencies += "org.apache.hadoop" % "hadoop-aws" % hadoopAwsVersion % "provided"
-libraryDependencies += "com.amazonaws" % "aws-java-sdk-bundle" % awsJavaSdkVersion % "provided"
-libraryDependencies += "com.github.pureconfig" %% "pureconfig" % pureConfigVersion
-libraryDependencies += "ch.qos.logback" % "logback-classic" % logbackClassicVersion
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.2" % Test
-
+val scalaTestVersion = "3.2.15"
+//val antlr4Version = "4.12.0"
 
 lazy val root = (project in file("."))
+  .enablePlugins(Antlr4Plugin)
   .settings(
-    name := "log-parser"
+    name := "log-parser",
+    ThisBuild / version := selfVersion,
+    ThisBuild / scalaVersion := "2.12.12",
+    assembly / mainClass := Some("org.tycoon.LogParser"),
+    assembly / assemblyJarName := "log-parser.jar",
+    Antlr4 / antlr4PackageName := Some("org.tycoon.parser.antlr"),
+    Antlr4 / antlr4GenListener := false,
+    Antlr4 / antlr4GenVisitor := true,
+    Antlr4 / antlr4TreatWarningsAsErrors := true,
+    libraryDependencies ++= Seq(
+      "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
+      "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+      "com.github.pureconfig" %% "pureconfig" % pureConfigVersion,
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion,
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+    ),
   )
