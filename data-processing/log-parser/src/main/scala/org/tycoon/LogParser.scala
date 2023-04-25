@@ -13,14 +13,13 @@ import pureconfig.generic.auto._
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
+import scala.collection.convert.ImplicitConversions.`list asScalaBuffer`
 import scala.util.{Failure, Success, Try}
 
 object LogParser {
 
   // Class logger
-  val logger: Logger = Logger(getClass.getName)
+  private val logger: Logger = Logger(getClass.getName)
 
   // Application config
   private val logParserConfig: LogParserConfig =
@@ -38,27 +37,28 @@ object LogParser {
     logger.debug(s"Get or create Spark Session")
     val spark = SparkSession.builder().getOrCreate()
 
-    val rdd: RDD[Either[Hand,String]] = spark.sparkContext
-      .wholeTextFiles(logParserConfig.inputPath, 5)
+    val handsRDD: RDD[Hand] = spark.sparkContext
+      .wholeTextFiles(logParserConfig.inputPath, 1000)
       .flatMap {
         case (fileName, fileContent) =>
+          logger.error(s"Processing file $fileName")
           Try(HandsExtractor.extract(TextPreProcessor.fix(fileContent))) match {
-            case Success(hands) => hands.toList.flatMap(Hand.apply(_)).map(Left(_))
+            case Success(hands) =>
+              hands.toList.flatMap(Hand.apply(_))
             case Failure(err) =>
               logger.error(s"Error parsing file $fileName: ${err.toString}")
-              List(Right(s"Error parsing file $fileName: ${err.toString}"))
+              List.empty
           }
       }
 
     import spark.implicits._
 
-    val handsDS: Dataset[Hand] = spark.createDataset(rdd.filter(_.isLeft).map(_.left.get))
-    val errorsDS: Dataset[String] = spark.createDataset(rdd.filter(_.isRight).map(_.right.get))
+    val handsDS: Dataset[Hand] = spark.createDataset(handsRDD)
 
     val timeId = LocalDateTime.now.format(DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss"))
+    val outputJsonFileName = s"${LogParser.getClass.getSimpleName.stripSuffix("$")}$timeId.json"
 
-    handsDS.write.json(s"${logParserConfig.outputPath}/${LogParser.getClass.getSimpleName}$timeId.json")
-    errorsDS.write.json(s"${logParserConfig.outputPath}/${LogParser.getClass.getSimpleName}$timeId-errors.txt")
+    handsDS.write.json(s"${logParserConfig.outputPath}/$outputJsonFileName")
 
   }
 

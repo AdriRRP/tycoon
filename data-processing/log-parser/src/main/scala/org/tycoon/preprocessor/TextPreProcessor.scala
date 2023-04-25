@@ -4,7 +4,7 @@ package org.tycoon.preprocessor
 object TextPreProcessor {
 
   def fix(fileContent: String): String = {
-    (removeGarbageLines _ andThen fixPlayerIdentifiers)(fileContent)
+    fixPlayerIdentifiers(removeGarbageLines(fileContent))
   }
 
   private def fixPlayerIdentifiers(fileContent: String): String = {
@@ -15,8 +15,8 @@ object TextPreProcessor {
   private def findPlayerIdentifiers(fileContent: String): List[String] = {
     val playerIdPattern = "^Seat\\s+\\d+:\\s+(.*)\\s+\\([$€]?\\d+\\.?\\d* in chips\\).*$".r
     fileContent.split("\n").foldLeft(List.empty[String]) { case (acc, curr) =>
-      curr match {
-        case playerIdPattern(playerId) if !acc.contains(playerId) => playerId :: acc
+      playerIdPattern.findFirstMatchIn(curr) match {
+        case Some(regexMatch) => regexMatch.group(1) :: acc
         case _ => acc
       }
     }
@@ -25,9 +25,9 @@ object TextPreProcessor {
   private def removeGarbageLines(fileContent: String): String = {
     val chatPattern = "^.*said,\\s+\".*?\"$".r
     val otherPattern =
-      "^^(?:(?!\\bSeat\\b|\\bPokerStars\\b)[^\\n:])+\\s*:(?:(?!\\bbets\\b|\\bfolds\\b|\\bcalls\\b|\\bposts\\b|\\braises\\b|\\bchecks\\b|\\bshows\\b|\\bmucks\\b|\\bdoesn't\\b).)+$".r
+      "^(?:(?!\\bSeat\\b|\\bPokerStars\\b)[^\\n:])+\\s*:(?:(?!\\bbets\\b|\\bfolds\\b|\\bcalls\\b|\\bposts\\b|\\braises\\b|\\bchecks\\b|\\bshows\\b|\\bmucks\\b|\\bdoesn't\\b).)+$".r
 
-    fileContent.split("\n").filterNot( line =>
+    fileContent.split("\n").filterNot(line =>
       chatPattern.findFirstIn(line).nonEmpty ||
         otherPattern.findFirstIn(line).nonEmpty
     ).mkString("", "\n", "\n")
