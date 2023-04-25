@@ -15,6 +15,7 @@ lazy val root = (project in file("."))
     ThisBuild / scalaVersion := "2.12.12",
     assembly / mainClass := Some("org.tycoon.LogParser"),
     assembly / assemblyJarName := "log-parser.jar",
+    Antlr4 / antlr4Version := "4.9.3",
     Antlr4 / antlr4PackageName := Some("org.tycoon.parser.antlr"),
     Antlr4 / antlr4GenListener := false,
     Antlr4 / antlr4GenVisitor := true,
