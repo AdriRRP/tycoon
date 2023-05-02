@@ -4,14 +4,10 @@ import org.scalatest._
 import org.scalatest.flatspec._
 import org.scalatest.matchers.should._
 import org.tycoon.parser.catalog.{Action, Hand, Phase, Seat}
-import org.tycoon.preprocessor.TextPreProcessor
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Locale
-import scala.io.Source
 
 class HandsExtractorUT extends AnyFlatSpec with Matchers with GivenWhenThen {
 
@@ -127,14 +123,5 @@ class HandsExtractorUT extends AnyFlatSpec with Matchers with GivenWhenThen {
     Then("extracted hand is as expected")
     extractedHands shouldBe expectedHands
   }
-  "TEST" should "extract single poker Hand" in {
-    Given("a single Poker hand log")
-    val file: String = Source.fromFile("/home/adrirrp/repos/tycoon/data-processing/log-parser/PS_114673_2016_8_22_JHTQ-001.txt").getLines().mkString("\n")
 
-    val preprocessedFile = TextPreProcessor.fix(file)
-
-    Files.write(Paths.get("/home/adrirrp/repos/tycoon/data-processing/log-parser/PS_114673_2016_8_22_JHTQ-001-preproc.txt"), preprocessedFile.getBytes(StandardCharsets.UTF_8))
-
-    HandsExtractor.extract(preprocessedFile)
-  }
 }

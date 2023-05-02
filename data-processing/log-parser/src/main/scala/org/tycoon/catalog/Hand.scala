@@ -17,7 +17,7 @@ import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
  * @param tableId         Identifier of the table where the hand happens.
  * @param tableMaxPlayers Maximum number of players who can occupy the table.
  * @param seats           List of Seat that make up the table.
- * @param dealerIndex
+ * @param dealerIndex     Index of seat where dealer is sit.
  * @param dealerSeatNum   Player's seat number in dealer position.
  * @param bigBlind        Current chip value of the big blind.
  * @param smallBlind      Current chip value of the small blind.
@@ -74,7 +74,7 @@ object Hand {
         phases = Option(hand.getPhases).map(
           _.toList.flatMap(Phase.apply(_))
         ).getOrElse(List.empty),
-        date = Option(hand.getDate).map(_.toString).getOrElse(""), // TODO: Revisar
+        date = Option(hand.getDate).map(_.toString).getOrElse(""),
         timeZone = hand.getTimeZone
       )
     )

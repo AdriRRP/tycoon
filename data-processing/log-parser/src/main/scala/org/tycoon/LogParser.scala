@@ -41,7 +41,7 @@ object LogParser {
       .wholeTextFiles(logParserConfig.inputPath, 1000)
       .flatMap {
         case (fileName, fileContent) =>
-          logger.error(s"Processing file $fileName")
+          logger.info(s"Processing file $fileName")
           Try(HandsExtractor.extract(TextPreProcessor.fix(fileContent))) match {
             case Success(hands) =>
               hands.toList.flatMap(Hand.apply(_))

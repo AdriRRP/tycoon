@@ -21,12 +21,6 @@ case class Phase(
  * Companion Object of Phase case class
  */
 object Phase {
-  val HOLECARDS = 0
-  val FLOP = 1
-  val TURN = 2
-  val RIVER = 3
-  val SHOWDOWN = 4
-
   def apply(javaPhase: org.tycoon.parser.catalog.Phase): Option[Phase] = {
     Option(javaPhase).map(phase =>
       new Phase(

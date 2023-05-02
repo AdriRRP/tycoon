@@ -25,15 +25,6 @@ case class Action(
  * Companion Object of Action case class
  */
 object Action {
-  val BIG_BLIND: Int = -2
-  val SMALL_BLIND: Int = -1
-  val ANTE = 0
-  val FOLD = 1
-  val CHECK = 2
-  val CALL = 3
-  val BET = 4
-  val RAISE = 5
-
   def apply(javaAction: org.tycoon.parser.catalog.Action): Option[Action] = {
     Option(javaAction).map(action =>
       new Action(
